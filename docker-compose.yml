@@ -1,0 +1,35 @@
+version: "3.2"
+services:
+  #rita parses the logs in the logs volume
+  rita:
+    image: ocmdev/rita:local
+    volumes:
+      - type: bind
+        source: ./rita-docker.yaml
+        target: /etc/rita/config.yaml
+      - type: volume
+        source: logs
+        target: /root/logs
+
+  db:
+    image: mongo:latest
+
+  #bro-mongo parses pcap into db and the logs volume
+  bro-rita:
+    image: ocmdev/bro:rita
+    build: ./docker-bro-rita
+    volumes:
+      - type: volume
+        source: logs
+        target: /root/logs
+      - type: bind
+        source: ./pcap
+        target: /root/pcap
+  
+  #pymongo diff script
+  mongo-diff:
+    build: ./mongo-diff
+    image: ocmdev/mongo-diff
+
+volumes:
+  logs:

@@ -14,6 +14,13 @@ services:
   db:
     image: mongo:latest
 
+  db-auth:
+    image: mongo:latest
+    command: ["--auth"]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+
   #bro-mongo parses pcap into db and the logs volume
   bro-rita:
     image: ocmdev/bro:rita

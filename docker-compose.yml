@@ -1,27 +1,47 @@
 version: "3.2"
 services:
-  #rita parses the logs in the logs volume
-  rita:
-    image: ocmdev/rita:local
+  # Docker certificate authority for generating tls certs
+  docker-ca:
+    image: ocmdev/docker-ca
+    build: ./docker-ca
+    environment:
+      - UNSAFE_CA="true"
     volumes:
-      - type: bind
-        source: ./rita-docker.yaml
-        target: /etc/rita/config.yaml
       - type: volume
-        source: logs
-        target: /root/logs
+        source: docker-ca
+        target: /root/ca
 
+  # Standard MongoDB server
   db:
     image: mongo:latest
 
+  # Authenticated MongoDB server
   db-auth:
     image: mongo:latest
     command: ["--auth"]
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      - MONGO_INITDB_ROOT_USERNAME
+      - MONGO_INITDB_ROOT_PASSWORD
 
-  #bro-mongo parses pcap into db and the logs volume
+  # Wire-Encrypted MongoDB server
+  db-tls:
+    image: mongo:latest
+    command: ["--sslMode", "requireSSL", "--sslPEMKeyFile", "/etc/ssl/mongodb.pem"]
+    volumes:
+      - type: bind
+        source: ./tls
+        target: /etc/ssl
+
+  # MongoDB Client
+  db-client:
+    image: mongo:latest
+    entrypoint: mongo
+    volumes:
+      - type: bind
+        source: ./tls
+        target: /etc/ssl
+
+  # Bro-RITA runs the plug-in and parses the test pcap into db and the logs volume
   bro-rita:
     image: ocmdev/bro:rita
     build: ./docker-bro-rita
@@ -30,9 +50,25 @@ services:
         source: logs
         target: /root/logs
       - type: bind
+        source: ./tls
+        target: /root/tls
+      - type: bind
         source: ./pcap
         target: /root/pcap
-  
+
+  # RITA parses the logs in the logs volume
+  # Requires a build of RITA with https://github.com/activecm/rita/pull/187
+  # docker load
+  rita:
+    image: ocmdev/rita:bro-rita-test
+    volumes:
+      - type: bind
+        source: ./rita/rita-docker.yaml
+        target: /etc/rita/config.yaml
+      - type: volume
+        source: logs
+        target: /root/logs
+
   #pymongo diff script
   mongo-diff:
     build: ./mongo-diff
@@ -40,3 +76,4 @@ services:
 
 volumes:
   logs:
+  docker-ca:

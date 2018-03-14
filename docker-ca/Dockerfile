@@ -20,6 +20,9 @@ RUN mkdir /root/ca/intermediate && \
 ADD openssl.cnf /root/ca/openssl.cnf
 ADD intermediate-openssl.cnf /root/ca/intermediate/openssl.cnf
 
+ADD openssl-wrapper.sh /root/openssl-wrapper.sh
+RUN chmod 755 /root/openssl-wrapper.sh
 
+WORKDIR /root/ca
 
-ENTRYPOINT ["openssl"]
+ENTRYPOINT ["../openssl-wrapper.sh"]

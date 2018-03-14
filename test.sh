@@ -46,7 +46,7 @@ docker-compose down -v > /dev/null 2>&1
 echo "$_HEADER Testing authenticated connections"
 docker-compose up -d db-auth > /dev/null 2>&1
 sleep 5
-docker-compose run --rm bro-rita -Cr ../pcap/test.pcap rita.bro \
+docker-compose run --rm bro-rita -Cr ../pcap/test-small.pcap rita.bro \
   "RITAWriter::URI = \"mongodb://$MONGO_INITDB_ROOT_USERNAME:$MONGO_INITDB_ROOT_PASSWORD@db-auth:27017\"" \
   "RITAWriter::DB = \"PLUGIN-TEST\""
 
@@ -76,7 +76,7 @@ fi
 echo "$_HEADER Testing encrypted connections (no-verification)"
 docker-compose up -d db-tls > /dev/null 2>&1
 sleep 5
-docker-compose run --rm bro-rita -Cr ../pcap/test.pcap rita.bro \
+docker-compose run --rm bro-rita -Cr ../pcap/test-small.pcap rita.bro \
   "RITAWriter::URI = \"mongodb://db-tls:27017/admin?ssl=true\"" \
   "RITAWriter::DB = \"PLUGIN-TEST\"" \
   "RITAWriter::VERIFY_CERT = \"false\""
@@ -93,7 +93,7 @@ docker-compose down -v > /dev/null 2>&1
 echo "$_HEADER Testing encrypted connections (with-verification)"
 docker-compose up -d db-tls > /dev/null 2>&1
 sleep 5
-docker-compose run --rm bro-rita -Cr ../pcap/test.pcap rita.bro \
+docker-compose run --rm bro-rita -Cr ../pcap/test-small.pcap rita.bro \
   "RITAWriter::URI = \"mongodb://db-tls:27017/admin?ssl=true\"" \
   "RITAWriter::DB = \"PLUGIN-TEST\"" \
   "RITAWriter::CA_FILE = \"/root/tls/ca-chain.cert.pem\""

@@ -97,6 +97,47 @@ if [ "$1" == "server" ]; then
   echo ""
   echo "Extract the server key using docker cp $(hostname):/root/ca/$_PRIVATE_KEY ./$_CERT_NAME.key.pem"
   echo "Extract the server cert using docker cp $(hostname):/root/ca/$_CERT ./$_CERT_NAME.cert.pem"
+
+elif [ "$1" == "client" ]; then
+  if [ $# -gt 1 ]; then
+    _CERT_NAME="$2"
+  else
+    printf "Client cert name: "
+    read
+    _CERT_NAME="$REPLY"
+  fi
+
+  if [ $# -gt 2 ]; then
+    _COMMON_NAME="$3"
+  else
+    printf "Client common name: "
+    read
+    _COMMON_NAME="$REPLY"
+  fi
+
+  _PRIVATE_KEY="intermediate/private/$_CERT_NAME.key.pem"
+  _CSR="intermediate/csr/$_CERT_NAME.csr.pem"
+  _CERT="intermediate/certs/$_CERT_NAME.cert.pem"
+  
+  echo ""
+  echo "CREATING CLIENT CERTIFICATE: $_CERT_NAME"
+
+  eval "openssl genrsa $_ENCRYPT -out \"$_PRIVATE_KEY\" 2048 $_OUTPUT"
+  chmod 400 "$_PRIVATE_KEY"
+
+  eval "openssl req -config intermediate/openssl.cnf \
+    -subj \"/C=GB/ST=England/O=Alice Ltd/CN=$_COMMON_NAME\" \
+    -key \"$_PRIVATE_KEY\" -new -sha256 -out \"$_CSR\" $_OUTPUT"
+
+  eval "$_AUTO openssl ca -config intermediate/openssl.cnf \
+    -extensions usr_cert -days 375 -notext -md sha256 \
+    -in \"$_CSR\" -out \"$_CERT\" $_OUTPUT"
+  chmod 400 "$_CERT"
+
+  echo ""
+  echo "Extract the server key using docker cp $(hostname):/root/ca/$_PRIVATE_KEY ./$_CERT_NAME.key.pem"
+  echo "Extract the server cert using docker cp $(hostname):/root/ca/$_CERT ./$_CERT_NAME.cert.pem"
+
 fi
 
 # https://jamielinux.com/docs/openssl-certificate-authority/sign-server-and-client-certificates.html

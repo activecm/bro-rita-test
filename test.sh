@@ -64,10 +64,13 @@ if [ ! -d "./tls" ]; then
     echo "$_HEADER Generating TLS certificates"
     mkdir tls
     docker-compose run docker-ca server mongodb db-tls > /dev/null
+    docker-compose run docker-ca client user1 user1@alice.fake > /dev/null
     docker cp broritatest_docker-ca_run_1:/root/ca/certs/ca.cert.pem ./tls/ca.cert.pem
     docker cp broritatest_docker-ca_run_1:/root/ca/intermediate/certs/ca-chain.cert.pem ./tls/ca-chain.cert.pem
     docker cp broritatest_docker-ca_run_1:/root/ca/intermediate/private/mongodb.key.pem ./tls/mongodb.key.pem
     docker cp broritatest_docker-ca_run_1:/root/ca/intermediate/certs/mongodb.cert.pem ./tls/mongodb.cert.pem
+    docker cp broritatest_docker-ca_run_1:/root/ca/intermediate/private/user1.key.pem ./tls/user1.key.pem
+    docker cp broritatest_docker-ca_run_1:/root/ca/intermediate/certs/user1.cert.pem ./tls/user1.cert.pem
     yes | docker-compose rm docker-ca > /dev/null
     cat ./tls/mongodb.key.pem ./tls/mongodb.cert.pem > ./tls/mongodb.pem
     rm -f ./tls/mongodb.key.pem ./tls/mongodb.cert.pem
@@ -104,3 +107,11 @@ if [ $? -eq 0 ]; then
 else
     echo "Encrypted connection unsuccessful"
 fi
+
+docker-compose down -v > /dev/null 2>&1
+
+echo "$_HEADER Testing encrypted connections (with-verification) with X.509 authentication"
+
+# will need to create new docker container for clustered mongodb
+# https://docs.mongodb.com/manual/core/security-x.509/
+# https://docs.mongodb.com/manual/tutorial/configure-x509-client-authentication/

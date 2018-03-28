@@ -24,7 +24,7 @@ if [ ! -f "./private/ca.key.pem" ]; then
   eval "openssl req -config openssl.cnf \
   -new -x509 \
   -key private/ca.key.pem \
-  -subj \"/C=GB/ST=England/O=Alice Ltd/CN=root.ca.alice.fake\" \
+  -subj \"/C=GB/ST=England/O=Alice Ltd/OU=Certificates/CN=root.ca.alice.fake\" \
   -days 7300 -sha256 \
   -out certs/ca.cert.pem $_OUTPUT"
   chmod 444 certs/ca.cert.pem
@@ -38,7 +38,7 @@ if [ ! -f "./private/ca.key.pem" ]; then
 
   eval "openssl req -config intermediate/openssl.cnf -new -sha256 \
     -key intermediate/private/intermediate.key.pem \
-    -subj \"/C=GB/ST=England/O=Alice Ltd/CN=inter.ca.alice.fake\" \
+    -subj \"/C=GB/ST=England/O=Alice Ltd/OU=Certificates/CN=inter.ca.alice.fake\" \
     -out intermediate/csr/intermediate.csr.pem $_OUTPUT"
 
   eval "$_AUTO openssl ca -config openssl.cnf -extensions v3_intermediate_ca \
@@ -86,7 +86,7 @@ if [ "$1" == "server" ]; then
   chmod 400 "$_PRIVATE_KEY"
 
   eval "openssl req -config intermediate/openssl.cnf \
-    -subj \"/C=GB/ST=England/O=Alice Ltd/CN=$_DNS_NAME\" \
+    -subj \"/C=GB/ST=England/O=Alice Ltd/OU=Servers/CN=$_DNS_NAME\" \
     -key \"$_PRIVATE_KEY\" -new -sha256 -out \"$_CSR\" $_OUTPUT"
 
   eval "$_AUTO openssl ca -config intermediate/openssl.cnf \
@@ -126,7 +126,7 @@ elif [ "$1" == "client" ]; then
   chmod 400 "$_PRIVATE_KEY"
 
   eval "openssl req -config intermediate/openssl.cnf \
-    -subj \"/C=GB/ST=England/O=Alice Ltd/CN=$_COMMON_NAME\" \
+    -subj \"/C=GB/ST=England/O=Alice Ltd/OU=Clients/CN=$_COMMON_NAME\" \
     -key \"$_PRIVATE_KEY\" -new -sha256 -out \"$_CSR\" $_OUTPUT"
 
   eval "$_AUTO openssl ca -config intermediate/openssl.cnf \

@@ -14,6 +14,10 @@ services:
   # Standard MongoDB server
   db:
     image: mongo:latest
+    volumes:
+      - type: volume
+        source: db-data
+        target: /data/db
 
   # Authenticated MongoDB server
   db-auth:
@@ -22,15 +26,34 @@ services:
     environment:
       - MONGO_INITDB_ROOT_USERNAME
       - MONGO_INITDB_ROOT_PASSWORD
+    volumes:
+      - type: volume
+        source: db-data
+        target: /data/db
 
   # Wire-Encrypted MongoDB server
   db-tls:
     image: mongo:latest
-    command: ["--sslMode", "requireSSL", "--sslPEMKeyFile", "/etc/ssl/mongodb.pem"]
+    command: ["--sslMode", "requireSSL", "--sslPEMKeyFile", "/etc/ssl/mongodb-tls.pem"]
     volumes:
       - type: bind
         source: ./tls
         target: /etc/ssl
+      - type: volume
+        source: db-data
+        target: /data/db
+
+  # Uses CA for client and server auth
+  db-x509: 
+    image: mongo:latest
+    command: ["--auth", "--sslMode", "requireSSL", "--sslPEMKeyFile", "/etc/ssl/mongodb-x509.pem", "--sslCAFile", "/etc/ssl/ca-chain.cert.pem"]
+    volumes:
+      - type: bind
+        source: ./tls
+        target: /etc/ssl
+      - type: volume
+        source: db-data
+        target: /data/db
 
   # MongoDB Client
   db-client:
@@ -77,3 +100,4 @@ services:
 volumes:
   logs:
   docker-ca:
+  db-data:

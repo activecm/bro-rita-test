@@ -42,9 +42,6 @@ RUN echo "===> Installing mongocxx" \
   && make \
   && make install
 
-#Invalidate cache when master is updated
-ADD https://api.github.com/repos/ocmdev/bro-mongodb/git/refs/heads/master /tmp/version.json
-
 RUN echo "===> Applying Bro patches..." \
   && cd /tmp \
   && git clone --recursive --branch v$BRO_VERSION git://git.bro.org/bro \
@@ -59,19 +56,24 @@ RUN echo "===> Applying Bro patches..." \
                           --disable-broctl --disable-broccoli \
                           --disable-auxtools --prefix=/usr/local \
   && make \
-  && make install \
-  && echo "===> Compiling af_packet plugin..." \
+  && make install
+
+RUN echo "===> Compiling af_packet plugin..." \
   && cd /tmp/bro/aux/plugins \
   && git clone https://github.com/J-Gras/bro-af_packet-plugin \
   && cd /tmp/bro/aux/plugins/bro-af_packet-plugin \
   && make distclean \
   && CC=clang ./configure --with-kernel=/usr \
   && make \
-  && make install \
-  && echo "===> Compiling mongodb plugin..." \
+  && make install
+
+#Invalidate cache when master is updated
+ADD https://api.github.com/repos/activecm/bro-rita/git/refs/heads/master /tmp/version.json
+
+RUN echo "===> Compiling mongodb plugin..." \
   && cd /tmp/bro/aux/plugins \
-  && git clone https://github.com/ocmdev/bro-mongodb \ 
-  && cd /tmp/bro/aux/plugins/bro-mongodb \
+  && git clone https://github.com/activecm/bro-rita \ 
+  && cd /tmp/bro/aux/plugins/bro-rita \
   && make distclean \
   && CC=clang ./configure \
   && make \

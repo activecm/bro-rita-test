@@ -63,17 +63,24 @@ docker-compose down -v > /dev/null 2>&1
 if [ ! -d "./tls" ]; then
     echo "$_HEADER Generating TLS certificates"
     mkdir tls
-    docker-compose run docker-ca server mongodb db-tls > /dev/null
+    docker-compose run docker-ca server mongodb-tls db-tls > /dev/null
+    docker-compose run docker-ca server mongodb-x509 db-x509 > /dev/null
     docker-compose run docker-ca client user1 user1@alice.fake > /dev/null
     docker cp broritatest_docker-ca_run_1:/root/ca/certs/ca.cert.pem ./tls/ca.cert.pem
     docker cp broritatest_docker-ca_run_1:/root/ca/intermediate/certs/ca-chain.cert.pem ./tls/ca-chain.cert.pem
-    docker cp broritatest_docker-ca_run_1:/root/ca/intermediate/private/mongodb.key.pem ./tls/mongodb.key.pem
-    docker cp broritatest_docker-ca_run_1:/root/ca/intermediate/certs/mongodb.cert.pem ./tls/mongodb.cert.pem
+    docker cp broritatest_docker-ca_run_1:/root/ca/intermediate/private/mongodb-tls.key.pem ./tls/mongodb-tls.key.pem
+    docker cp broritatest_docker-ca_run_1:/root/ca/intermediate/certs/mongodb-tls.cert.pem ./tls/mongodb-tls.cert.pem
+    docker cp broritatest_docker-ca_run_1:/root/ca/intermediate/private/mongodb-x509.key.pem ./tls/mongodb-x509.key.pem
+    docker cp broritatest_docker-ca_run_1:/root/ca/intermediate/certs/mongodb-x509.cert.pem ./tls/mongodb-x509.cert.pem
     docker cp broritatest_docker-ca_run_1:/root/ca/intermediate/private/user1.key.pem ./tls/user1.key.pem
     docker cp broritatest_docker-ca_run_1:/root/ca/intermediate/certs/user1.cert.pem ./tls/user1.cert.pem
     yes | docker-compose rm docker-ca > /dev/null
-    cat ./tls/mongodb.key.pem ./tls/mongodb.cert.pem > ./tls/mongodb.pem
-    rm -f ./tls/mongodb.key.pem ./tls/mongodb.cert.pem
+    cat ./tls/mongodb-tls.key.pem  ./tls/mongodb-tls.cert.pem  > ./tls/mongodb-tls.pem
+    cat ./tls/mongodb-x509.key.pem ./tls/mongodb-x509.cert.pem > ./tls/mongodb-x509.pem
+    cat ./tls/user1.key.pem ./tls/user1.cert.pem > ./tls/user1.pem
+    rm -f ./tls/mongodb-tls.key.pem  ./tls/mongodb-tls.cert.pem \
+          ./tls/mongodb-x509.key.pem ./tls/mongodb-x509.cert.pem \
+          ./tls/user1.key.pem ./tls/user1.cert.pem
 fi
 
 echo "$_HEADER Testing encrypted connections (no-verification)"
@@ -110,8 +117,43 @@ fi
 
 docker-compose down -v > /dev/null 2>&1
 
-echo "$_HEADER Testing encrypted connections (with-verification) with X.509 authentication"
+echo "$_HEADER Testing encrypted connections (with-verification) with X.509 mutual authentication"
+docker-compose up -d db-x509 > /dev/null 2>&1
+sleep 5
+_USER_DN="CN=user1@alice.fake,OU=Clients,O=Alice Ltd,ST=England,C=GB"
+_ADD_X509_USER_CMD="db.getSiblingDB(\"\$external\").runCommand(
+    {
+        createUser: \"$_USER_DN\",
+        roles: [
+            { role: 'root', db: 'admin' },
+        ],
+        writeConcern: { w: \"majority\", wtimeout: 5000 }
+    }
+)"
+_X509_AUTH_CMD="db.getSiblingDB(\"\$external\").auth(
+    {
+        mechanism: \"MONGODB-X509\",
+        user: \"$_USER_DN\"
+    }
+)"
 
-# will need to create new docker container for clustered mongodb
-# https://docs.mongodb.com/manual/core/security-x.509/
-# https://docs.mongodb.com/manual/tutorial/configure-x509-client-authentication/
+#use the localhost exception to create the first user
+docker-compose exec db-x509 mongo -ssl --sslAllowInvalidCertificates --sslAllowInvalidHostnames --sslPEMKeyFile /etc/ssl/user1.pem --eval "$_ADD_X509_USER_CMD" > /dev/null 2>&1
+
+docker-compose run --rm bro-rita -Cr ../pcap/test-small.pcap rita.bro \
+  "RITAWriter::URI = \"mongodb://db-x509:27017/admin?ssl=true&authMechanism=MONGODB-X509\"" \
+  "RITAWriter::DB = \"PLUGIN-TEST\"" \
+  "RITAWriter::CA_FILE = \"/root/tls/ca-chain.cert.pem\"" \
+  "RITAWriter::CLIENT_CERT = \"/root/tls/user1.pem\""
+
+docker-compose run --rm db-client mongodb://db-x509:27017/admin -ssl --sslCAFile /etc/ssl/ca-chain.cert.pem --sslPEMKeyFile /etc/ssl/user1.pem \
+    --eval "$_X509_AUTH_CMD; db.adminCommand('listDatabases')" | grep -q "PLUGIN-TEST"
+
+if [ $? -eq 0 ]; then
+    echo "X.509 mutual auth successful"
+else
+    echo "X.509 mutual auth connection unsuccessful"
+fi
+
+docker-compose down -v > /dev/null 2>&1
+

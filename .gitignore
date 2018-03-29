@@ -1,4 +1,5 @@
 mongo-diff/
+docker-ca/
 tls/
 pcap/
 *.swp

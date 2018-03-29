@@ -5,7 +5,7 @@ export MONGO_INITDB_ROOT_PASSWORD="test_pass"
 
 if [ ! -d "./mongo-diff" ]; then
     echo "$_HEADER Downloading mongo-diff"
-    git clone https://github.com/ocmdev/mongo-diff
+    git clone https://github.com/activecm/mongo-diff
 fi
 
 if [ ! -f "./pcap/test.pcap" ]; then
@@ -13,7 +13,7 @@ if [ ! -f "./pcap/test.pcap" ]; then
     exit
 fi
 
-if [ "$(docker images -q ocmdev/rita:bro-rita-test 2> /dev/null)" == "" ]; then
+if [ "$(docker images -q activecm/rita:bro-rita-test 2> /dev/null)" == "" ]; then
   docker load rita/rita-test-build.tar.gz
 fi
 

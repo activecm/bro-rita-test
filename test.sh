@@ -20,7 +20,7 @@ __set_fail() {
 
 # PREREQUISITES
 
-# Grab mongo-diff TODO: install pymongo
+# Grab mongo-diff #TODO: Autobuild mongo-diff and pull from quay
 if [ ! -d "./mongo-diff" ]; then
     echo "$_HEADER MISSING mongo-diff"
     git clone https://github.com/activecm/mongo-diff

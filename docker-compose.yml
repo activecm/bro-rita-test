@@ -83,7 +83,7 @@ services:
   # Requires a build of RITA with https://github.com/activecm/rita/pull/187
   # docker load
   rita:
-    image: activecm/rita:bro-rita-test
+    image: quay.io/activecm/rita
     volumes:
       - type: bind
         source: ./rita/rita-docker.yaml

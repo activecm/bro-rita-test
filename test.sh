@@ -49,15 +49,6 @@ if [ ! -f "$_SMALL_PCAP" ]; then
     echo ""
 fi
 
-# Grab RITA
-if [ "$(docker images -q activecm/rita:bro-rita-test 2> /dev/null)" == "" ]; then
-    echo "$_HEADER MISSING activecm/rita:bro-rita-test"
-    wget -q --show-progress -O /tmp/rita-test-build.tar.gz https://github.com/activecm/bro-rita-test/releases/download/v0.9/rita-test-build.tar.gz
-    docker load -i /tmp/rita-test-build.tar.gz
-    rm /tmp/rita-test-build.tar.gz
-    echo ""
-fi
-
 # Bring the system down if its running
 docker-compose down -v > /dev/null 2>&1
 

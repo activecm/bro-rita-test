@@ -5,11 +5,12 @@ LABEL maintainer "https://github.com/blacktop"
 ENV BRO_VERSION 2.5.2
 
 COPY patches /tmp
-RUN apk add --no-cache zlib openssl cyrus-sasl libstdc++ libpcap geoip libgcc tini python2 git cmake
+RUN apk add --no-cache zlib openssl cyrus-sasl snappy libstdc++ libpcap geoip libgcc tini python2 git cmake
 RUN apk add --no-cache -t .build-deps \
                           linux-headers \
                           openssl-dev \
                           cyrus-sasl-dev \
+                          snappy-dev \
                           libpcap-dev \
                           python2-dev \
                           py2-pip \
